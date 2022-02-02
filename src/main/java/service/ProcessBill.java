@@ -11,7 +11,13 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
 
 public class ProcessBill {
-    private ItemsRepository itemsRepository = new ItemsRepository();
+
+
+    private ItemsRepository itemsRepository;
+
+    public ProcessBill(ItemsRepository itemsRepository) {
+        this.itemsRepository = itemsRepository;
+    }
 
     public void printBill(ArrayList<Long> products) {
         List<Item> billProductList = getBillProducts(products);
