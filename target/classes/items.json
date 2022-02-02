@@ -1,0 +1,17 @@
+[
+  {
+    "barCode": "01001",
+    "price": 1.1,
+    "productName": "Apple"
+  },
+  {
+    "barCode": "02002",
+    "price": 1.1,
+    "productName": "Banana"
+  },
+  {
+    "barCode": "03003",
+    "price": 0.9,
+    "productName": "Carrot"
+  }
+]

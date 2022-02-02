@@ -1,11 +1,10 @@
 package service;
 
 import model.BillItem;
-import model.PriceList;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import repository.Items;
+import repository.ItemsRepository;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -15,55 +14,63 @@ import java.util.List;
 public class ProcessBillTest {
 
     private static ProcessBill processBill;
+    private static ItemsRepository itemsRepository;
 
     @Before
     public void setUp() {
         processBill = new ProcessBill();
+        itemsRepository = new ItemsRepository();
     }
 
     @Test
-    public void generateBill_NotNull() {
-        ArrayList list = new ArrayList();
-        list.add(2);
-        list.add(3);
-        Assert.assertNotNull(processBill.generateBill(Items.getProducts(), list));
+    public void createBill_NoInput() {
+        List<BillItem> billItems = new ArrayList<>();
+        Assert.assertTrue(processBill.createBill(billItems).isEmpty());
     }
 
     @Test
-    public void generateBill_ListElementsMatch() {
-        ArrayList list = new ArrayList();
-        list.add(2);
-        list.add(3);
-        List<BillItem> billItems = processBill.generateBill(Items.getProducts(), list);
-        Assert.assertTrue(billItems.stream().anyMatch(item -> "Banana".equals(item.getProductName())));
-    }
-
-
-    @Test
-    public void getBillProducts_NotNull(){
-        ArrayList list = new ArrayList();
-        list.add(2);
-        list.add(3);
-        List<BillItem> billProducts = processBill.getBillProducts(list);
-        Assert.assertNotNull(billProducts);
+    public void createBill_BillItemsList_MatchOutput() {
+        List<BillItem> billItems = new ArrayList<>();
+        billItems.add(new BillItem(01001, 1.1, "Apple", 2, 2.2));
+        Assert.assertFalse(processBill.createBill(billItems).isEmpty());
+        Assert.assertTrue(processBill.createBill(billItems).contains("2 x Apple @1.1 = 2.2"));
     }
 
     @Test
-    public void getBillProducts_ListElementsMatch(){
-        ArrayList list = new ArrayList();
-        list.add(2);
-        list.add(3);
-        Assert.assertTrue(((List<PriceList>) processBill.getBillProducts(list)).stream().anyMatch(item -> "Banana".equals(item.getProductName())));
+    public void generateBillItems_NoInput() {
+        ArrayList<Long> list = new ArrayList();
+        Assert.assertTrue(processBill.generateBillItems(itemsRepository.getProducts(), list).isEmpty());
     }
 
     @Test
-    public void printBill_CheckOutputMatch() {
+    public void generateBillItems_MatchOutput() {
+        ArrayList<Long> list = new ArrayList();
+        list.add(Long.parseLong("01001"));
+        list.add(Long.parseLong("01001"));
+        Assert.assertFalse(processBill.generateBillItems(itemsRepository.getProducts(), list).isEmpty());
+        Assert.assertTrue((processBill.generateBillItems(itemsRepository.getProducts(), list)).stream().filter(p->p.getProductName().equals("Apple")).findFirst().isPresent());
+    }
+
+    @Test
+    public void getBillProducts_NoInput() {
+        ArrayList<Long> list = new ArrayList();
+        Assert.assertTrue(processBill.getBillProducts(list).isEmpty());
+    }
+
+    @Test
+    public void getBillProducts_MatchOutput() {
+        ArrayList<Long> list = new ArrayList();
+        list.add(Long.parseLong("01001"));
+        list.add(Long.parseLong("01001"));
+        Assert.assertFalse(processBill.getBillProducts(list).isEmpty());
+        Assert.assertTrue((processBill.getBillProducts(list)).stream().filter(p->p.getProductName().equals("Apple")).findFirst().isPresent());
+    }
+
+    @Test
+    public void printBill_MatchOutput() {
         ArrayList list = new ArrayList();
-        list.add(2);
-        list.add(2);
-        list.add(2);
-        list.add(3);
-        list.add(3);
+        list.add(Long.parseLong("01001"));
+        list.add(Long.parseLong("01001"));
 
         PrintStream oldOut = System.out;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -73,8 +80,7 @@ public class ProcessBillTest {
 
         System.setOut(oldOut);
         String output = new String(baos.toByteArray());
-
-        Assert.assertTrue(output.contains("15"));
+        Assert.assertTrue(output.contains("2.2"));
     }
 
 }

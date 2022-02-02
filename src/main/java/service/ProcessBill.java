@@ -1,55 +1,63 @@
 package service;
 
-import repository.Items;
+import repository.ItemsRepository;
 import model.BillItem;
-import model.PriceList;
+import model.Item;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toList;
+
 public class ProcessBill {
-    public static void printBill(ArrayList<Integer> products) {
-        List<PriceList> billProductList = getBillProducts(products);
-        List<BillItem> billItems = generateBill(billProductList, products);
+    private ItemsRepository itemsRepository = new ItemsRepository();
+
+    public void printBill(ArrayList<Long> products) {
+        List<Item> billProductList = getBillProducts(products);
+        List<BillItem> billItems = generateBillItems(billProductList, products);
+        String bill = createBill(billItems);
         System.out.println("**************************BILL*********************************");
-        for (BillItem billItem : billItems) {
-            System.out.println(billItem.getQuantity() + " x " + billItem.getProductName() + " @" + billItem.getPrice() + " = " + billItem.getTotal());
-        }
-        System.out.println("---------------------------------------------------------------");
-        System.out.println("           TOTAL = " + billItems.stream().mapToInt(b -> b.getPrice() * b.getQuantity()).sum());
+        System.out.println(bill);
         System.out.println("***************************************************************");
     }
 
-    public static List<BillItem> generateBill(List<PriceList> billProductList, ArrayList<Integer> products) {
-        int quantity;
+    protected String createBill(List<BillItem> billItems) {
+        String bill = "";
+        if (null != billItems && !billItems.isEmpty()) {
+            for (BillItem billItem : billItems) {
+                bill = bill + billItem.getQuantity() + " x " + billItem.getProductName() + " @" + billItem.getPrice() + " = " + billItem.getTotal() + "\n";
+            }
+            bill = bill + "          TOTAL = " + billItems.stream().mapToDouble(b -> b.getPrice() * b.getQuantity()).sum();
+        }
+        return bill;
+    }
+
+    public List<BillItem> generateBillItems(List<Item> billProductList, ArrayList<Long> products) {
         List<BillItem> billItems = new ArrayList<>();
-        try {
-            List<Integer> distinctProducts = products.stream()
-                    .distinct()
-                    .collect(Collectors.toList());
-            for (Integer product : distinctProducts) {
-                quantity = Collections.frequency(products, product);
-                Optional<PriceList> billProductItem = billProductList.stream().filter(p -> p.getBarCode() == product).findFirst();
-                if(!billProductItem.isEmpty()) {
-                    PriceList billProduct = billProductItem.get();
-                    billItems.add(new BillItem(quantity, billProduct.getProductName(), quantity * billProduct.getPrice(), billProduct.getPrice()));
-                }
+
+        Map<Long, Long> productQuantity = products.stream().collect(
+                Collectors.groupingBy(
+                        Function.identity(), Collectors.counting()
+                )
+        );
+
+        for (Map.Entry<Long, Long> quantityPerProduct : productQuantity.entrySet()) {
+            Optional<Item> billProductItem = billProductList.stream().filter(p -> p.getBarCode() == quantityPerProduct.getKey()).findFirst();
+            if (!billProductItem.isEmpty()) {
+                Item billProduct = billProductItem.get();
+                billItems.add(new BillItem(billProduct.getBarCode(), billProduct.getPrice(), billProduct.getProductName(), quantityPerProduct.getValue(), quantityPerProduct.getValue() * billProduct.getPrice()));
             }
         }
-        catch (RuntimeException e) {
-            e.printStackTrace();
-        }
+
         return billItems;
     }
 
-    public static List<PriceList> getBillProducts(ArrayList<Integer> products) {
-        return Items.getProducts().stream().filter(
+    public List<Item> getBillProducts(ArrayList<Long> products) {
+        return itemsRepository.getProducts().stream().filter(
                 product -> products.contains(
                         product.getBarCode()
                 )
-        ).collect(Collectors.toList());
+        ).collect(toList());
     }
 }

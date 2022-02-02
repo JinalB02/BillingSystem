@@ -1,13 +1,13 @@
 import service.BillInput;
+import service.ProcessBill;
 
 import java.util.ArrayList;
 
-import static service.ProcessBill.*;
-
 public class CheckOut {
     public static void main(String[] args) {
-        ArrayList<Integer> products = BillInput.addItems();
-        printBill(products);
+        ProcessBill processBill = new ProcessBill();
+        BillInput billInput = new BillInput();
+        ArrayList<Long> products = billInput.addItems();
+        processBill.printBill(products);
     }
-
 }
